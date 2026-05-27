@@ -2,11 +2,16 @@
 <html>
 <head>
   <title>QC Trace Filter</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
       padding: 20px;
       background: #f5f5f5;
+    }
+
+    h2 {
+      margin-bottom: 10px;
     }
 
     textarea {
@@ -15,6 +20,9 @@
       padding: 10px;
       font-size: 14px;
       box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
     }
 
     button {
@@ -32,11 +40,15 @@
       background: #005fa3;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      background: white;
+    #output {
       margin-top: 15px;
+      overflow-x: auto;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      background: white;
       font-family: Arial, sans-serif;
       font-size: 13px;
     }
@@ -46,6 +58,7 @@
       padding: 8px;
       background: #d9eaf7;
       text-align: left;
+      font-weight: bold;
     }
 
     td {
@@ -68,7 +81,7 @@
   <br>
 
   <button onclick="filterData()">Filter 5 Columns</button>
-  <button onclick="copyEmailTable()">Copy Email Table</button>
+  <button onclick="copyEmailTable()">Copy Table With Borders</button>
   <button onclick="clearAll()">Clear</button>
 
   <div id="output"></div>
@@ -88,14 +101,14 @@ function filterData() {
       let supplier = "";
       let vendorLot = "";
 
-      for (let j = i + 1; j < Math.min(i + 20, lines.length); j++) {
+      for (let j = i + 1; j < Math.min(i + 25, lines.length); j++) {
         if (lines[j].includes(" - ")) {
           material = lines[j];
           break;
         }
       }
 
-      for (let j = i + 1; j < Math.min(i + 20, lines.length); j++) {
+      for (let j = i + 1; j < Math.min(i + 25, lines.length); j++) {
         if (/^[\d,]+(\.\d+)?\s*\([A-Z]+\)$/.test(lines[j])) {
           receivedQty = lines[j];
           break;
@@ -107,7 +120,7 @@ function filterData() {
         supplier = lines[qtyIndex + 1];
       }
 
-      for (let j = i + 1; j < Math.min(i + 30, lines.length); j++) {
+      for (let j = i + 1; j < Math.min(i + 35, lines.length); j++) {
         if (/^\d{4}\/\d{2}\/\d{2}/.test(lines[j])) {
           vendorLot = lines[j + 1] || "";
           break;
@@ -132,7 +145,7 @@ function filterData() {
   rows.forEach(row => {
     html += "<tr>";
     row.forEach(col => {
-      html += `<td>${col}</td>`;
+      html += `<td>${escapeHtml(col)}</td>`;
     });
     html += "</tr>";
   });
@@ -150,48 +163,35 @@ function copyEmailTable() {
     return;
   }
 
-  let html = `
-  <table style="border-collapse:collapse; width:100%; font-family:Arial, sans-serif; font-size:13px;">
-    <tr style="background:#d9eaf7; font-weight:bold;">
-      <th style="border:1px solid #000; padding:8px; text-align:left;">QC TRACE</th>
-      <th style="border:1px solid #000; padding:8px; text-align:left;">MATERIAL</th>
-      <th style="border:1px solid #000; padding:8px; text-align:left;">RECEIVED QUANTITY</th>
-      <th style="border:1px solid #000; padding:8px; text-align:left;">SUPPLIER</th>
-      <th style="border:1px solid #000; padding:8px; text-align:left;">VENDOR LOT</th>
-    </tr>
-  `;
+  let range = document.createRange();
+  range.selectNode(table);
 
-  for (let i = 1; i < table.rows.length; i++) {
-    html += "<tr>";
-    for (let cell of table.rows[i].cells) {
-      html += `<td style="border:1px solid #000; padding:8px; text-align:left; vertical-align:top;">${cell.innerText}</td>`;
-    }
-    html += "</tr>";
+  let selection = window.getSelection();
+  selection.removeAllRanges();
+  selection.addRange(range);
+
+  try {
+    document.execCommand("copy");
+    alert("Copied table with borders! Paste into Outlook/Gmail email body.");
+  } catch (err) {
+    alert("Copy failed. Please manually select the table and copy.");
   }
 
-  html += "</table>";
-
-  let plainText = "";
-  for (let row of table.rows) {
-    let cells = Array.from(row.cells).map(cell => cell.innerText);
-    plainText += cells.join("\t") + "\n";
-  }
-
-  navigator.clipboard.write([
-    new ClipboardItem({
-      "text/html": new Blob([html], { type: "text/html" }),
-      "text/plain": new Blob([plainText], { type: "text/plain" })
-    })
-  ]).then(() => {
-    alert("Copied! Paste into Outlook or Gmail.");
-  }).catch(() => {
-    alert("Copy failed. Please select the table manually and copy.");
-  });
+  selection.removeAllRanges();
 }
 
 function clearAll() {
   document.getElementById("inputData").value = "";
   document.getElementById("output").innerHTML = "";
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 </script>
 
