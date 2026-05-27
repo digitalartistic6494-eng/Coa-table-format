@@ -4,200 +4,83 @@
   <title>QC Sample Summary</title>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #eef2f3, #dfe9f3);
-      color: #1f2933;
-      padding: 30px;
+      margin: 20px;
+      background: #f4f4f4;
+      color: #222;
     }
 
-    .container {
-      max-width: 1200px;
-      margin: auto;
-      background: #ffffff;
-      border-radius: 14px;
-      padding: 28px;
-      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.12);
-    }
-
-    .header {
-      border-bottom: 1px solid #e5e7eb;
-      padding-bottom: 16px;
-      margin-bottom: 22px;
-    }
-
-    .header h2 {
-      margin: 0;
-      font-size: 26px;
-      letter-spacing: 0.3px;
-      color: #111827;
-    }
-
-    .header p {
-      margin: 8px 0 0;
-      color: #6b7280;
-      font-size: 14px;
-    }
-
-    .input-box {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
+    h2 {
+      margin-bottom: 8px;
     }
 
     textarea {
       width: 100%;
       height: 260px;
-      padding: 14px;
+      padding: 10px;
       font-size: 14px;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
+      border: 1px solid #bbb;
+      border-radius: 4px;
+      box-sizing: border-box;
       resize: vertical;
-      background: #ffffff;
-      outline: none;
-      line-height: 1.45;
-    }
-
-    textarea:focus {
-      border-color: #2563eb;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-    }
-
-    .actions {
-      margin-top: 14px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
+      background: #fff;
     }
 
     button {
-      padding: 10px 18px;
+      margin-top: 12px;
+      margin-right: 6px;
+      padding: 9px 16px;
       font-size: 14px;
-      border-radius: 8px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background: #e9e9e9;
       cursor: pointer;
-      border: none;
-      transition: 0.2s;
     }
 
-    .copy-btn {
-      background: #111827;
-      color: white;
-    }
-
-    .copy-btn:hover {
-      background: #374151;
-    }
-
-    .clear-btn {
-      background: #e5e7eb;
-      color: #111827;
-    }
-
-    .clear-btn:hover {
-      background: #d1d5db;
-    }
-
-    .copy-msg {
-      font-size: 13px;
-      color: #15803d;
-      font-weight: 600;
-    }
-
-    .note {
-      margin-top: 10px;
-      font-size: 12px;
-      color: #6b7280;
+    button:hover {
+      background: #ddd;
     }
 
     #summary {
-      margin-top: 24px;
+      margin-top: 15px;
       overflow-x: auto;
-      border-radius: 12px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      background: #ffffff;
+      background: #fff;
       font-size: 13px;
-      min-width: 850px;
-      border: 1px solid #d1d5db;
+    }
+
+    th, td {
+      border: 1px solid #333;
+      padding: 8px;
+      text-align: left;
+      vertical-align: top;
     }
 
     th {
-      background: #111827;
-      color: white;
-      padding: 11px 10px;
-      text-align: left;
-      font-weight: 600;
-      border: 1px solid #111827;
-      letter-spacing: 0.2px;
-    }
-
-    td {
-      padding: 10px;
-      border: 1px solid #d1d5db;
-      vertical-align: top;
-      color: #1f2933;
-    }
-
-    tr:nth-child(even) td {
-      background: #f9fafb;
-    }
-
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-
-      .container {
-        padding: 18px;
-      }
-
-      .header h2 {
-        font-size: 22px;
-      }
-
-      textarea {
-        height: 230px;
-      }
+      background: #e6eef7;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
 
-  <div class="container">
+  <h2>QC Sample Summary</h2>
+  <p>Paste received sample details below.</p>
 
-    <div class="header">
-      <h2>QC Sample Summary</h2>
-      <p>Paste received sample details below. The summary table will be created automatically.</p>
-    </div>
+  <textarea id="rawText" placeholder="Paste details here..."></textarea>
 
-    <div class="input-box">
-      <textarea id="rawText" placeholder="Paste details here..."></textarea>
+  <br>
 
-      <div class="actions">
-        <button class="copy-btn" onclick="copySummary()">Copy Table</button>
-        <button class="clear-btn" onclick="clearPage()">Clear</button>
-        <span id="copyMsg" class="copy-msg"></span>
-      </div>
+  <button onclick="copySummary()">Copy Table</button>
+  <button onclick="clearPage()">Clear</button>
 
-      <div class="note">
-        Copy the table and paste directly into email body.
-      </div>
-    </div>
-
-    <div id="summary"></div>
-
-  </div>
+  <div id="summary"></div>
 
 <script>
 const rawText = document.getElementById("rawText");
@@ -279,7 +162,7 @@ function copySummary() {
   const table = document.getElementById("sampleTable");
 
   if (!table) {
-    showMessage("Paste details first");
+    alert("Paste the sample details first.");
     return;
   }
 
@@ -293,22 +176,12 @@ function copySummary() {
   document.execCommand("copy");
   selection.removeAllRanges();
 
-  showMessage("Copied ✓");
-}
-
-function showMessage(text) {
-  const msg = document.getElementById("copyMsg");
-  msg.textContent = text;
-
-  setTimeout(() => {
-    msg.textContent = "";
-  }, 2000);
+  alert("Copied. Paste it into your email.");
 }
 
 function clearPage() {
   rawText.value = "";
   summary.innerHTML = "";
-  showMessage("");
 }
 
 function clean(value) {
