@@ -74,6 +74,7 @@
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     button {
@@ -101,6 +102,18 @@
 
     .clear-btn:hover {
       background: #d1d5db;
+    }
+
+    .copy-msg {
+      font-size: 13px;
+      color: #15803d;
+      font-weight: 600;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #6b7280;
     }
 
     #summary {
@@ -139,12 +152,6 @@
       background: #f9fafb;
     }
 
-    .note {
-      margin-top: 10px;
-      font-size: 12px;
-      color: #6b7280;
-    }
-
     @media (max-width: 600px) {
       body {
         padding: 15px;
@@ -180,6 +187,7 @@
       <div class="actions">
         <button class="copy-btn" onclick="copySummary()">Copy Table</button>
         <button class="clear-btn" onclick="clearPage()">Clear</button>
+        <span id="copyMsg" class="copy-msg"></span>
       </div>
 
       <div class="note">
@@ -271,7 +279,7 @@ function copySummary() {
   const table = document.getElementById("sampleTable");
 
   if (!table) {
-    alert("Paste the sample details first.");
+    showMessage("Paste details first");
     return;
   }
 
@@ -285,12 +293,22 @@ function copySummary() {
   document.execCommand("copy");
   selection.removeAllRanges();
 
-  alert("Copied. Paste it into your email.");
+  showMessage("Copied ✓");
+}
+
+function showMessage(text) {
+  const msg = document.getElementById("copyMsg");
+  msg.textContent = text;
+
+  setTimeout(() => {
+    msg.textContent = "";
+  }, 2000);
 }
 
 function clearPage() {
   rawText.value = "";
   summary.innerHTML = "";
+  showMessage("");
 }
 
 function clean(value) {
