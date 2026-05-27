@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>QC Trace Filter</title>
+  <title>QC Sample Summary</title>
 
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f5f5f5;
+      margin: 20px;
+      background: #f4f4f4;
+      color: #222;
     }
 
     h2 {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     textarea {
@@ -19,120 +20,123 @@
       height: 260px;
       padding: 10px;
       font-size: 14px;
-      box-sizing: border-box;
-      border: 1px solid #ccc;
+      border: 1px solid #bbb;
       border-radius: 4px;
+      box-sizing: border-box;
       resize: vertical;
+      background: #fff;
     }
 
     button {
-      margin: 10px 5px 10px 0;
-      padding: 10px 18px;
-      font-size: 15px;
+      margin-top: 12px;
+      margin-right: 6px;
+      padding: 9px 16px;
+      font-size: 14px;
+      border: 1px solid #999;
+      border-radius: 4px;
+      background: #e9e9e9;
       cursor: pointer;
-      border: none;
-      background: #0078d4;
-      color: white;
-      border-radius: 5px;
     }
 
     button:hover {
-      background: #005fa3;
+      background: #ddd;
     }
 
-    #output {
+    #summary {
       margin-top: 15px;
       overflow-x: auto;
     }
 
     table {
-      border-collapse: collapse;
       width: 100%;
-      background: white;
-      font-family: Arial, sans-serif;
+      border-collapse: collapse;
+      background: #fff;
       font-size: 13px;
     }
 
-    th {
-      border: 1px solid #000;
-      padding: 8px;
-      background: #d9eaf7;
-      text-align: left;
-      font-weight: bold;
-    }
-
-    td {
-      border: 1px solid #000;
+    th, td {
+      border: 1px solid #333;
       padding: 8px;
       text-align: left;
       vertical-align: top;
+    }
+
+    th {
+      background: #e6eef7;
+      font-weight: bold;
     }
   </style>
 </head>
 
 <body>
 
-  <h2>QC Trace Data Filter</h2>
+  <h2>QC Sample Summary</h2>
+  <p>Paste received sample details below.</p>
 
-  <p>Paste full sample received data below:</p>
-
-  <textarea id="inputData" placeholder="Paste data here..."></textarea>
+  <textarea id="rawText" placeholder="Paste details here..."></textarea>
 
   <br>
 
-  <button onclick="filterData()">Filter 5 Columns</button>
-  <button onclick="copyEmailTable()">Copy Table With Borders</button>
-  <button onclick="clearAll()">Clear</button>
+  <button onclick="copySummary()">Copy Table</button>
+  <button onclick="clearPage()">Clear</button>
 
-  <div id="output"></div>
+  <div id="summary"></div>
 
 <script>
-function filterData() {
-  let text = document.getElementById("inputData").value;
-  let lines = text.split(/\n/).map(x => x.trim()).filter(x => x !== "");
+const rawText = document.getElementById("rawText");
+const summary = document.getElementById("summary");
 
-  let rows = [];
+rawText.addEventListener("input", buildSummary);
+rawText.addEventListener("paste", function () {
+  setTimeout(buildSummary, 100);
+});
 
-  for (let i = 0; i < lines.length; i++) {
-    if (lines[i].startsWith("QR")) {
-      let qcTrace = lines[i];
-      let material = "";
-      let receivedQty = "";
-      let supplier = "";
-      let vendorLot = "";
+function buildSummary() {
+  const text = rawText.value.trim();
 
-      for (let j = i + 1; j < Math.min(i + 25, lines.length); j++) {
-        if (lines[j].includes(" - ")) {
-          material = lines[j];
-          break;
-        }
-      }
-
-      for (let j = i + 1; j < Math.min(i + 25, lines.length); j++) {
-        if (/^[\d,]+(\.\d+)?\s*\([A-Z]+\)$/.test(lines[j])) {
-          receivedQty = lines[j];
-          break;
-        }
-      }
-
-      let qtyIndex = lines.indexOf(receivedQty);
-      if (qtyIndex !== -1 && lines[qtyIndex + 1]) {
-        supplier = lines[qtyIndex + 1];
-      }
-
-      for (let j = i + 1; j < Math.min(i + 35, lines.length); j++) {
-        if (/^\d{4}\/\d{2}\/\d{2}/.test(lines[j])) {
-          vendorLot = lines[j + 1] || "";
-          break;
-        }
-      }
-
-      rows.push([qcTrace, material, receivedQty, supplier, vendorLot]);
-    }
+  if (!text) {
+    summary.innerHTML = "";
+    return;
   }
 
-  let html = `
-    <table id="resultTable">
+  const lines = text
+    .split(/\n/)
+    .map(line => line.trim())
+    .filter(line => line.length > 0);
+
+  const records = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    if (!/^QR/i.test(lines[i])) continue;
+
+    const qcTrace = lines[i];
+    const section = lines.slice(i + 1, i + 35);
+
+    const material = section.find(line => line.includes(" - ")) || "";
+    const quantity = section.find(line => /^[\d,]+(\.\d+)?\s*\([A-Z]+\)$/i.test(line)) || "";
+
+    let supplier = "";
+    const qtyPos = section.indexOf(quantity);
+    if (qtyPos >= 0 && section[qtyPos + 1]) {
+      supplier = section[qtyPos + 1];
+    }
+
+    let vendorLot = "";
+    const datePos = section.findIndex(line => /^\d{4}\/\d{2}\/\d{2}/.test(line));
+    if (datePos >= 0 && section[datePos + 1]) {
+      vendorLot = section[datePos + 1];
+    }
+
+    records.push([qcTrace, material, quantity, supplier, vendorLot]);
+  }
+
+  if (records.length === 0) {
+    summary.innerHTML = "";
+    return;
+  }
+
+  let table = `
+    <table id="sampleTable">
       <tr>
         <th>QC TRACE</th>
         <th>MATERIAL</th>
@@ -142,56 +146,49 @@ function filterData() {
       </tr>
   `;
 
-  rows.forEach(row => {
-    html += "<tr>";
-    row.forEach(col => {
-      html += `<td>${escapeHtml(col)}</td>`;
+  records.forEach(row => {
+    table += "<tr>";
+    row.forEach(value => {
+      table += `<td>${clean(value)}</td>`;
     });
-    html += "</tr>";
+    table += "</tr>";
   });
 
-  html += "</table>";
-
-  document.getElementById("output").innerHTML = html;
+  table += "</table>";
+  summary.innerHTML = table;
 }
 
-function copyEmailTable() {
-  let table = document.getElementById("resultTable");
+function copySummary() {
+  const table = document.getElementById("sampleTable");
 
   if (!table) {
-    alert("Please filter data first.");
+    alert("Paste the sample details first.");
     return;
   }
 
-  let range = document.createRange();
+  const range = document.createRange();
   range.selectNode(table);
 
-  let selection = window.getSelection();
+  const selection = window.getSelection();
   selection.removeAllRanges();
   selection.addRange(range);
 
-  try {
-    document.execCommand("copy");
-    alert("Copied table with borders! Paste into Outlook/Gmail email body.");
-  } catch (err) {
-    alert("Copy failed. Please manually select the table and copy.");
-  }
-
+  document.execCommand("copy");
   selection.removeAllRanges();
+
+  alert("Copied. Paste it into your email.");
 }
 
-function clearAll() {
-  document.getElementById("inputData").value = "";
-  document.getElementById("output").innerHTML = "";
+function clearPage() {
+  rawText.value = "";
+  summary.innerHTML = "";
 }
 
-function escapeHtml(text) {
-  return text
+function clean(value) {
+  return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/>/g, "&gt;");
 }
 </script>
 
