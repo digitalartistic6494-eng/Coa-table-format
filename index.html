@@ -42,6 +42,13 @@
       background: #ddd;
     }
 
+    .copy-msg {
+      font-size: 13px;
+      color: green;
+      font-weight: bold;
+      margin-left: 8px;
+    }
+
     #summary {
       margin-top: 15px;
       overflow-x: auto;
@@ -79,6 +86,7 @@
 
   <button onclick="copySummary()">Copy Table</button>
   <button onclick="clearPage()">Clear</button>
+  <span id="copyMsg" class="copy-msg"></span>
 
   <div id="summary"></div>
 
@@ -100,8 +108,11 @@ function buildSummary() {
   }
 
   const lines = text
+    .replace(/\u00A0/g, " ")
+    .replace(/\u2002/g, " ")
+    .replace(/\u2003/g, " ")
     .split(/\n/)
-    .map(line => line.trim())
+    .map(line => line.replace(/\s+/g, " ").trim())
     .filter(line => line.length > 0);
 
   const records = [];
@@ -110,21 +121,45 @@ function buildSummary() {
     if (!/^QR/i.test(lines[i])) continue;
 
     const qcTrace = lines[i];
-    const section = lines.slice(i + 1, i + 35);
+    const sectionLines = lines.slice(i + 1, i + 40);
+    const section = sectionLines.join(" ");
 
-    const material = section.find(line => line.includes(" - ")) || "";
-    const quantity = section.find(line => /^[\d,]+(\.\d+)?\s*\([A-Z]+\)$/i.test(line)) || "";
-
+    let material = "";
+    let quantity = "";
     let supplier = "";
-    const qtyPos = section.indexOf(quantity);
-    if (qtyPos >= 0 && section[qtyPos + 1]) {
-      supplier = section[qtyPos + 1];
+    let vendorLot = "";
+
+    const materialMatch = section.match(/([A-Z0-9]+ - .*?)(?=\s+\d+\s+Units|\s+[\d,]+(\.\d+)?\s*\([A-Z]+\))/i);
+    if (materialMatch) {
+      material = materialMatch[1].trim();
+    } else {
+      const materialLine = sectionLines.find(line => line.includes(" - "));
+      material = materialLine || "";
     }
 
-    let vendorLot = "";
-    const datePos = section.findIndex(line => /^\d{4}\/\d{2}\/\d{2}/.test(line));
-    if (datePos >= 0 && section[datePos + 1]) {
-      vendorLot = section[datePos + 1];
+    const qtyMatch = section.match(/[\d,]+(\.\d+)?\s*\([A-Z]+\)/i);
+    if (qtyMatch) {
+      quantity = qtyMatch[0].trim();
+    }
+
+    const supplierMatch = section.match(/\([A-Z]+\)\s+(.*?)(?=\s+\d{12}|\s+BP\d+|\s+\d{4}\/\d{2}\/\d{2})/i);
+    if (supplierMatch) {
+      supplier = supplierMatch[1].trim();
+    } else {
+      const qtyLineIndex = sectionLines.findIndex(line => /[\d,]+(\.\d+)?\s*\([A-Z]+\)/i.test(line));
+      if (qtyLineIndex >= 0 && sectionLines[qtyLineIndex + 1]) {
+        supplier = sectionLines[qtyLineIndex + 1];
+      }
+    }
+
+    const lotMatch = section.match(/\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}:\d{2}\s+(.+?)(?=\s+QR|$)/i);
+    if (lotMatch) {
+      vendorLot = lotMatch[1].trim();
+    } else {
+      const dateIndex = sectionLines.findIndex(line => /^\d{4}\/\d{2}\/\d{2}/.test(line));
+      if (dateIndex >= 0 && sectionLines[dateIndex + 1]) {
+        vendorLot = sectionLines[dateIndex + 1];
+      }
     }
 
     records.push([qcTrace, material, quantity, supplier, vendorLot]);
@@ -162,7 +197,7 @@ function copySummary() {
   const table = document.getElementById("sampleTable");
 
   if (!table) {
-    alert("Paste the sample details first.");
+    showMessage("Paste details first");
     return;
   }
 
@@ -176,12 +211,22 @@ function copySummary() {
   document.execCommand("copy");
   selection.removeAllRanges();
 
-  alert("Copied. Paste it into your email.");
+  showMessage("Copied ✓");
+}
+
+function showMessage(text) {
+  const msg = document.getElementById("copyMsg");
+  msg.textContent = text;
+
+  setTimeout(() => {
+    msg.textContent = "";
+  }, 2000);
 }
 
 function clearPage() {
   rawText.value = "";
   summary.innerHTML = "";
+  showMessage("");
 }
 
 function clean(value) {
